@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Passagem de Carteira</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--ink:#1d1d1b;--mut:#6b6a66;--line:#e2e0da;--acc:#2b3a67;--r:#d64545;--y:#e0a82e;--g:#3f9d5f}
+@media (prefers-color-scheme:dark){:root{--bg:#161616;--card:#1f1f1f;--ink:#ececea;--mut:#9a9893;--line:#333;--acc:#8fa6ff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:var(--card);border-bottom:1px solid var(--line);padding:14px 20px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:18px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+nav{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
+nav button{border:1px solid var(--line);background:transparent;color:var(--ink);padding:6px 12px;border-radius:999px;cursor:pointer;font-size:14px}
+nav button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+main{max-width:1200px;margin:0 auto;padding:20px}
+h2{font-size:20px;margin:0 0 4px}
+p.sub{color:var(--mut);margin:0 0 16px;max-width:75ch}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:3px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+textarea{resize:vertical;min-height:64px}
+input[type=checkbox]{width:auto;accent-color:var(--acc)}
+button.b{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
+button.b.p{background:var(--acc);color:#fff;border-color:var(--acc)}
+button.b.d{color:var(--r)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:900px}
+th{text-align:left;font-size:12px;color:var(--mut);padding:6px;font-weight:600}
+td{padding:4px;vertical-align:top;border-top:1px solid var(--line)}
+td textarea{min-height:40px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.dot.vermelho{background:var(--r)}.dot.amarelo{background:var(--y)}.dot.verde{background:var(--g)}
+.step{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line);align-items:flex-start}
+.step:first-child{border:0}
+.step.done{opacity:.55}
+.tag{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--mut)}
+.alert{padding:10px 14px;border-radius:8px;margin-bottom:8px;background:#fff4d6;color:#5a4300;border:1px solid #ecd48a}
+.alert.ok{background:#e3f4e9;color:#14502a;border-color:#a8d9b8}
+.stats{display:flex;gap:12px;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;text-align:center;padding:12px;border-radius:10px;border:1px solid var(--line)}
+.stat b{font-size:26px;display:block}
+.bar2{height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin:4px 0 10px}
+.bar2 i{display:block;height:100%;background:var(--g)}
+.ficha h3{margin:0 0 10px}
+.cnt{font-size:12px;color:var(--mut)}.cnt.over{color:var(--r);font-weight:600}
+.muted{color:var(--mut)}
+@media print{header nav,header .bar,.noprint,button{display:none!important}body{background:#fff;color:#000}.card{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Passagem de Carteira — Férias dos Navegadores</h1>
+  <div class="bar noprint" id="top"></div>
+  <nav id="nav"></nav>
+</header>
+<main id="main"></main>
+<datalist id="nomes"></datalist>
+
+<script>
+const TABS=[['home','Visão geral'],['mapa','Mapa da carteira'],['fichas','Fichas'],['crit','Momentos críticos'],['detr','Detratores'],['agenda','Agenda'],['msg','Mensagens'],['check','Checklists'],['diario','Diário']];
+const STATUS=['Ativo','Sumido','Renovado','Descongelou','Veio do Pico SPP'];
+const SEM=['vermelho','amarelo','verde'];
+const CHECKS={
+ saida:['Mapa da Carteira com todos os mentorados e semáforo marcado','Ficha completa de cada vermelho, ficha curta de cada amarelo','Black, desafios e entregáveis com data preenchidos','Detratores e casos sensíveis preenchidos (ou "nenhum" escrito)','Agenda do período com cobertura decidida linha a linha','Volante adicionada nos grupos de WhatsApp dos vermelhos e amarelos','Volante com acesso ao Fluxer na carteira, às pastas e aos docs de contexto','Call de passagem feita e o que surgiu nela já está no doc','Mensagem de aviso enviada aos vermelhos e amarelos no D-1'],
+ entra:['Li o doc inteiro antes da call de passagem e cheguei com as dúvidas anotadas','Sei dizer, para cada vermelho, o que ele precisa entregar e até quando','Abri o Contexto de cada vermelho no Fluxer','Testei os links e os acessos, todos abrem','Sei quem eu aciono se um caso sensível piorar','Mandei a mensagem de apresentação para os vermelhos no D0'],
+ volta:['Li o Diário inteiro antes de abrir o WhatsApp','Call de devolução feita, só sobre as linhas marcadas como "precisa de ação"','Respondi os mentorados que ficaram com pendência do período','Atualizei o Contexto dos mentorados que mudaram de fase ou de status nas férias','Devolvi um feedback de uma linha para a volante sobre a passagem: o que faltou no doc']
+};
+const CHECK_T={saida:'Navegador que sai (fecha no D-3)',entra:'Volante que entra (fecha no D0)',volta:'Navegador que volta (fecha no D+1)'};
+const FICHA=[['f1','1. Quem é, em 3 linhas','Nicho, produto principal, ticket, há quanto tempo está na mentoria, status'],['f2','2. Onde está no plano de ação','Fase atual, último card entregue e quando, próximo card e prazo. Link do plano no Fluxer'],['f3','3. O que está em jogo nas férias','O que acontece nesses dias que a volante precisa acompanhar. Com data'],['f4','4. Como ele funciona','Como responde, o que precisa, do que não gosta, o que já deu errado'],['f5','5. Combinados abertos','O que você prometeu e não entregou; o que ele prometeu e não entregou. Com data'],['f6','6. O que NÃO fazer','Assunto que não se toca, promessa que não se faz, decisão que só o navegador toma'],['f7','7. Onde está tudo','Grupo do WhatsApp, pasta de material, página, última copy enviada']];
+const SHORT=['f1','f3','f4','f6'];
+
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const pd=s=>{if(!s)return null;const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c)};
+const add=(s,n)=>{const d=pd(s);if(!d)return null;d.setDate(d.getDate()+n);return d};
+const f2=d=>d?String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'):'—';
+const fs=s=>f2(pd(s));
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+
+function blank(){return{id:uid(),meta:{nav:'',volante:'',coord:'',start:'',end:'',seq:false},done:{},mapa:[],fichas:{},black:[],desafios:[],entreg:[],detr:[],detrNenhum:false,agenda:[],check:{},diario:[]}}
+function load(){try{const d=JSON.parse(localStorage.getItem('passagem.v1'));if(d&&d.items&&d.cur)return d}catch(e){}const s=blank();return{cur:s.id,items:{[s.id]:s}}}
+let DB=load(),tab='home',onlyAct=false;
+const S=()=>DB.items[DB.cur];
+function save(){try{localStorage.setItem('passagem.v1',JSON.stringify(DB))}catch(e){}}
+function get(p){return p.split('.').reduce((o,k)=>o?.[k],S())}
+function set(p,v){const ks=p.split('.');const l=ks.pop();let o=S();for(const k of ks){if(o[k]==null)o[k]={};o=o[k]}o[l]=v;save()}
+
+const inp=(p,ph='',type='text',r=false)=>`<input type="${type}" data-p="${p}" ${r?'data-r="1"':''} value="${esc(get(p))}" placeholder="${esc(ph)}">`;
+const ta=(p,ph='',rows=3)=>`<textarea rows="${rows}" data-p="${p}" placeholder="${esc(ph)}">${esc(get(p))}</textarea>`;
+const sel=(p,opts,r=false)=>`<select data-p="${p}" ${r?'data-r="1"':''}>${opts.map(o=>`<option ${get(p)===o?'selected':''}>${o}</option>`).join('')}</select>`;
+const fname=s=>`Passagem — ${s.meta.nav||'[Navegador]'} — ${s.meta.start?fs(s.meta.start):'dd/mm'} a ${s.meta.end?fs(s.meta.end):'dd/mm'}`;
+
+function renderTop(){
+  const s=S();
+  $('#top').innerHTML=`<select id="pick" style="max-width:340px">${Object.values(DB.items).map(i=>`<option value="${i.id}" ${i.id===DB.cur?'selected':''}>${esc(fname(i))}</option>`).join('')}</select>
+  <button class="b p" data-a="new">+ Nova passagem</button>
+  <button class="b" data-a="export">Exportar JSON</button>
+  <button class="b" data-a="import">Importar JSON</button>
+  <button class="b" onclick="window.print()">Imprimir / PDF</button>
+  <button class="b d" data-a="delpass">Excluir esta</button>`;
+  $('#nav').innerHTML=TABS.map(([k,l])=>`<button class="${k===tab?'on':''}" data-a="tab:${k}">${l}</button>`).join('');
+  $('#nomes').innerHTML=S().mapa.filter(m=>m.nome).map(m=>`<option value="${esc(m.nome)}">`).join('');
+}
+const $=s=>document.querySelector(s);
+
+/* ---------- generic table ---------- */
+function table(arr,cols,addLabel){
+  const rows=S()[arr];
+  return `<div class="tw"><table><thead><tr>${cols.map(c=>`<th style="width:${c.w||'auto'}">${c.l}</th>`).join('')}<th></th></tr></thead><tbody>
+  ${rows.map((r,i)=>`<tr>${cols.map(c=>{const p=`${arr}.${i}.${c.f}`;let h;
+    if(c.t==='sel')h=sel(p,c.o,c.r);else if(c.t==='date')h=inp(p,'','date');else if(c.t==='nome')h=`<input list="nomes" data-p="${p}" value="${esc(r[c.f])}">`;else if(c.t==='area')h=ta(p,c.ph||'',2);else h=inp(p,c.ph||'','text',c.r);
+    return `<td>${c.f==='sem'?`<span class="dot ${r.sem}"></span>`:''}${h}</td>`}).join('')}<td><button class="b d" data-a="del:${arr}:${i}">✕</button></td></tr>`).join('')||`<tr><td colspan="${cols.length+1}" class="muted" style="padding:14px">Nenhuma linha ainda.</td></tr>`}
+  </tbody></table></div><p><button class="b p" data-a="add:${arr}">+ ${addLabel}</button></p>`;
+}
+const ROW={
+ mapa:()=>({id:uid(),nome:'',status:'Ativo',sem:'verde',motivo:'',prox:'',link:''}),
+ black:()=>({nome:'',d0:'',fase:'',confere:'',ate:''}),
+ desafios:()=>({desafio:'',regra:'',prazo:'',quem:'',cobra:''}),
+ entreg:()=>({nome:'',entrega:'',data:'',revisa:''}),
+ detr:()=>({nome:'',aconteceu:'',hoje:'',combinado:'',aciona:'',naodizer:''}),
+ agenda:()=>({data:'',nome:'',o:'',cob:'',obs:''}),
+ diario:()=>({id:uid(),data:today(),nome:'',aconteceu:'',fez:'',acao:'Não',det:'',sens:false})
+};
+
+/* ---------- timeline ---------- */
+function steps(){
+  const s=S(),m=s.meta,st=m.start,seq=m.seq;
+  const D=n=>st?add(st,n):null;
+  const ret=m.end?add(m.end,1):null;
+  return[
+   {k:'t1',d:D(-15),l:'D-15',o:'Navegador',t:'Férias marcadas no calendário do time, volante e coordenação avisadas, cópia deste doc aberta com o nome certo.'},
+   {k:'t2',d:D(-10),l:'D-10',o:'Navegador',t:'Mapa da Carteira preenchido com todos os mentorados e o semáforo marcado. Define quem ganha ficha.'},
+   {k:'t3',d:D(-7),l:'D-7',o:'Navegador',t:'Fichas dos vermelhos e amarelos prontas. Seções de Black/desafio, detratores e agenda preenchidas.'},
+   {k:'t4',d:D(seq?-5:-3),l:seq?'D-5':'D-3',o:'Navegador + volante',t:'Call de passagem de 30 a 45 min. A volante lê o doc antes e chega com dúvidas. O que surgir na call entra no doc na hora.'+(seq?' (saídas em sequência: antecipada para não cair no retorno do outro)':'')},
+   {k:'t5',d:D(-1),l:'D-1',o:'Navegador',t:'Manda a mensagem de aviso para os mentorados vermelhos e amarelos. Verde só recebe se perguntar.'},
+   {k:'t6',d:D(0),l:'D0 → retorno',o:'Volante',t:'Atende pelo doc e preenche o Diário no mesmo dia em que a coisa acontece.'},
+   {k:'t7',d:ret,l:'Retorno (D+1)',o:'Navegador + volante',t:'Navegador lê o Diário antes de abrir o WhatsApp. Call de devolução de 15 a 20 min só sobre as linhas "precisa de ação".'}
+  ];
+}
+
+/* ---------- views ---------- */
+function vHome(){
+  const s=S(),m=s.meta;
+  const cnt=c=>s.mapa.filter(x=>x.sem===c).length;
+  const prio=s.mapa.filter(x=>x.sem!=='verde');
+  const fichaOk=prio.filter(x=>{const f=s.fichas[x.id]||{};return (x.sem==='vermelho'?FICHA.map(a=>a[0]):SHORT).every(k=>(f[k]||'').trim())}).length;
+  const al=[];
+  const t3=m.start?add(m.start,-3):null;
+  if(t3){const diff=Math.ceil((t3-new Date(new Date().setHours(0,0,0,0)))/864e5);
+    if(diff<0)al.push(`O prazo de 3 dias antes das férias (${f2(t3)}) já passou.`);else al.push(`Faltam ${diff} dia(s) para o doc ficar pronto (${f2(t3)}).`)}
+  if(!m.start||!m.end||!m.nav||!m.volante)al.push('Preencha navegador, volante e datas das férias abaixo.');
+  if(!s.mapa.length)al.push('O Mapa da Carteira está vazio.');
+  const semFicha=prio.length-fichaOk;if(semFicha>0)al.push(`${semFicha} ficha(s) de vermelho/amarelo ainda incompletas.`);
+  if(!s.detr.length&&!s.detrNenhum)al.push('Detratores: adicione os casos ou marque "nenhum".');
+  const semCob=s.agenda.filter(a=>!(a.cob||'').trim()).length;if(semCob)al.push(`${semCob} item(ns) da agenda sem cobertura decidida.`);
+  const pend=s.diario.filter(d=>d.acao==='Sim').length;if(pend)al.push(`${pend} linha(s) do Diário marcadas como "precisa de ação" no retorno.`);
+  const stp=steps();
+  return `
+  <h2>Visão geral</h2>
+  <p class="sub">A volante não precisa saber tudo da carteira, precisa saber o que pode quebrar enquanto o navegador está fora. Uma cópia por navegador, por férias — preenchida pelo navegador, nunca pela volante.</p>
+  <div class="card"><div class="grid">
+   <div><label>Navegador</label>${inp('meta.nav','Nome','text',true)}</div>
+   <div><label>Volante</label>${inp('meta.volante','Nome','text',true)}</div>
+   <div><label>Coordenação</label>${inp('meta.coord','Nome')}</div>
+   <div><label>Primeiro dia de férias (D0)</label>${inp('meta.start','','date',true)}</div>
+   <div><label>Último dia de férias</label>${inp('meta.end','','date',true)}</div>
+  </div>
+  <p><label style="display:inline"><input type="checkbox" data-p="meta.seq" data-r="1" ${m.seq?'checked':''}> Navegadores saem em sequência (a volante terá duas carteiras: call de passagem vira D-5)</label></p>
+  <p class="muted" style="margin:0">Nome do arquivo sugerido: <b>${esc(fname(s))}</b></p></div>
+  ${al.map(a=>`<div class="alert">${esc(a)}</div>`).join('')||'<div class="alert ok">Nada pendente. Passagem em dia.</div>'}
+  <div class="card"><div class="stats">
+   <div class="stat"><b style="color:var(--r)">${cnt('vermelho')}</b>Vermelhos</div>
+   <div class="stat"><b style="color:var(--y)">${cnt('amarelo')}</b>Amarelos</div>
+   <div class="stat"><b style="color:var(--g)">${cnt('verde')}</b>Verdes</div>
+   <div class="stat"><b>${fichaOk}/${prio.length}</b>Fichas completas</div>
+   <div class="stat"><b>${s.diario.length}</b>Registros no Diário</div>
+  </div></div>
+  <div class="card"><h3 style="margin-top:0">Linha do tempo</h3>
+  ${stp.map(x=>`<div class="step ${s.done[x.k]?'done':''}"><input type="checkbox" data-p="done.${x.k}" data-r="1" ${s.done[x.k]?'checked':''}>
+   <div style="min-width:110px"><b>${x.l}</b><div class="cnt">${x.d?f2(x.d):'defina as datas'}</div></div>
+   <div><span class="tag">${x.o}</span><div>${esc(x.t)}</div></div></div>`).join('')}
+  </div>`;
+}
+function vMapa(){return `<h2>Mapa da carteira</h2>
+ <p class="sub">Uma linha por mentorado, carteira inteira. O semáforo decide o resto do doc. <b>Vermelho</b>: vai precisar de ação (Black, desafio com entrega, crise, detrator, cancelamento no ar) — ficha completa. <b>Amarelo</b>: pode precisar (sumido que voltou, renovação vencendo, feedback prometido, cobra muito) — ficha curta. <b>Verde</b>: só responde se chamar — só esta linha.</p>
+ <div class="card">${table('mapa',[{f:'nome',l:'Mentorado',w:'16%',r:true},{f:'status',l:'Status',t:'sel',o:STATUS,w:'12%'},{f:'sem',l:'Semáforo',t:'sel',o:SEM,r:true,w:'11%'},{f:'motivo',l:'Por que está nessa cor',t:'area',ph:'Black D0 em 21/11, está no aquecimento',w:'26%'},{f:'prox',l:'Próximo compromisso',t:'area',w:'18%'},{f:'link',l:'Link do contexto (Fluxer/doc)',w:'17%'}],'Adicionar mentorado')}</div>`}
+function vFichas(){
+  const s=S();const prio=s.mapa.filter(x=>x.sem!=='verde').sort((a,b)=>SEM.indexOf(a.sem)-SEM.indexOf(b.sem));
+  return `<h2>Fichas por mentorado prioritário</h2>
+  <p class="sub">Uma ficha para cada vermelho; versão curta (itens 1, 3, 4 e 6) para cada amarelo. Se passar de uma tela, está longa demais: o detalhe mora no Contexto do mentorado. A ficha é só o que muda nas férias.</p>
+  ${prio.length?prio.map(x=>{const keys=x.sem==='vermelho'?FICHA.map(f=>f[0]):SHORT;
+   const tot=keys.reduce((n,k)=>n+((s.fichas[x.id]||{})[k]||'').length,0);
+   return `<div class="card ficha"><h3><span class="dot ${x.sem}"></span>${esc(x.nome||'(sem nome)')} — ${x.sem==='vermelho'?'Vermelho':'Amarelo'} <span class="tag">${esc(x.status)}</span></h3>
+   ${x.link?`<p class="cnt">Contexto: <a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.link)}</a></p>`:''}
+   <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">${FICHA.filter(f=>keys.includes(f[0])).map(f=>`<div><label>${f[1]}</label>${ta(`fichas.${x.id}.${f[0]}`,f[2],4)}</div>`).join('')}</div>
+   <div class="cnt ${tot>1800?'over':''}">${tot} caracteres${tot>1800?' — longa demais, mova o detalhe para o Contexto do mentorado':''}</div></div>`}).join(''):'<div class="card muted">Marque mentorados como vermelho ou amarelo no Mapa para gerar as fichas.</div>'}`;
+}
+function vCrit(){return `<h2>Mentorados em momento crítico</h2>
+ <p class="sub">O que tem data e não espera o navegador voltar. Regra prática: se a volante não souber responder "o que eu faço com isso" em 10 segundos olhando a tabela, falta uma coluna preenchida.</p>
+ <div class="card"><h3 style="margin-top:0">Black e lançamentos</h3><p class="cnt">D0 (abertura do carrinho) e fase do cronograma no primeiro dia das férias. A volante precisa saber o que conferir e quando, não a campanha inteira.</p>
+ ${table('black',[{f:'nome',l:'Mentorado',t:'nome'},{f:'d0',l:'D0 (carrinho abre)',t:'date'},{f:'fase',l:'Fase no D0 das férias',t:'area'},{f:'confere',l:'O que a volante confere',t:'area'},{f:'ate',l:'Até quando',t:'date'}],'Adicionar campanha')}</div>
+ <div class="card"><h3 style="margin-top:0">Desafios da mentoria</h3><p class="cnt">A volante cobra entrega e responde dúvida de regra. Mudança de regra, só o navegador ou a coordenação.</p>
+ ${table('desafios',[{f:'desafio',l:'Desafio'},{f:'regra',l:'Regra em uma frase',t:'area'},{f:'prazo',l:'Prazo final',t:'date'},{f:'quem',l:'Quem da carteira está dentro',t:'area'},{f:'cobra',l:'O que a volante cobra',t:'area'}],'Adicionar desafio')}</div>
+ <div class="card"><h3 style="margin-top:0">Entregáveis com prazo no período</h3><p class="cnt">Página, VSL, roteiro, quiz. Defina antes: a volante revisa, segura até o retorno, ou manda para outro navegador?</p>
+ ${table('entreg',[{f:'nome',l:'Mentorado',t:'nome'},{f:'entrega',l:'O que vai entregar',t:'area'},{f:'data',l:'Data prevista',t:'date'},{f:'revisa',l:'Quem revisa',ph:'Volante / segura / outro navegador'}],'Adicionar entregável')}</div>`}
+function vDetr(){const s=S();return `<h2>Detratores e casos sensíveis</h2>
+ <p class="sub">Detrator, mentorado em crise, reembolso ou cancelamento no ar, quem reclamou do navegador, do Felipe ou da mentoria. Cada caso em uma linha, sem suavizar.</p>
+ <div class="card"><b>Regras para a volante:</b><ol style="margin:6px 0 0"><li>Responde rápido, mas não resolve sozinha: acusa recebimento, diz que vai verificar e aciona quem está na coluna "aciona".</li><li>Não promete nada que o navegador não combinou (reembolso, troca de navegador, call extra com o Felipe).</li><li>Registra no Diário no mesmo dia, com print da conversa.</li></ol></div>
+ <div class="card"><p><label style="display:inline"><input type="checkbox" data-p="detrNenhum" data-r="1" ${s.detrNenhum?'checked':''}> Nenhum caso na carteira (a seção foi olhada)</label></p>
+ ${s.detrNenhum&&!s.detr.length?'<p class="muted">Registrado: <b>nenhum</b>.</p>':table('detr',[{f:'nome',l:'Mentorado',t:'nome'},{f:'aconteceu',l:'O que aconteceu',t:'area'},{f:'hoje',l:'Como está hoje',t:'area'},{f:'combinado',l:'Combinado atual',t:'area'},{f:'aciona',l:'Se piorar, aciona'},{f:'naodizer',l:'O que não dizer',t:'area'}],'Adicionar caso')}</div>`}
+function vAgenda(){return `<h2>Agenda que cai nas férias</h2>
+ <p class="sub">Call individual, feedback prometido, revisão de material, aniversário de mentoria, renovação vencendo. O navegador decide antes de sair o que acontece com cada item.</p>
+ <div class="card">${table('agenda',[{f:'data',l:'Data',t:'date',w:'11%'},{f:'nome',l:'Mentorado',t:'nome',w:'17%'},{f:'o',l:'O que é',t:'area'},{f:'cob',l:'Cobertura (decisão)',t:'area'},{f:'obs',l:'Observação',t:'area'}],'Adicionar item')}</div>`}
+function vMsg(){
+  const s=S(),m=s.meta;const prio=s.mapa.filter(x=>x.sem!=='verde');
+  const ret=m.end?add(m.end,1):null;
+  const aviso=`Oi [nome], tudo bem?\n\nVou tirar uns dias de férias de ${fs(m.start)} a ${fs(m.end)}. Nesse período quem fica com você é a ${m.volante||'[volante]'}, que já está por dentro do que a gente está fazendo [na Black / no desafio / na sua página].\n\nQualquer coisa nesse período, chama ela aqui mesmo no grupo. Dia ${f2(ret)} eu volto e a gente retoma de onde parou.`;
+  const vol=`Oi [nome]! Sou a ${m.volante||'[volante]'}, vou acompanhar você enquanto ${m.nav||'[navegador(a)]'} está fora, até ${fs(m.end)}.\n\nJá li tudo que vocês combinaram. Pelo que vi, o próximo passo seu é [próximo card / entrega] até [data]. Se tiver qualquer dúvida ou travar em algo, me chama.`;
+  const opt=`<option value="">— escolher mentorado —</option>`+prio.map(x=>`<option>${esc(x.nome)}</option>`).join('');
+  return `<h2>Mensagens</h2><p class="sub">Escolha o mentorado para preencher o nome e ajuste o tom. Mantenha as três informações: quem cobre, até quando, e que a volante já sabe do contexto.</p>
+  <div class="card"><h3 style="margin-top:0">Aviso do navegador — D-1 (${m.start?f2(add(m.start,-1)):'—'}) · vermelhos e amarelos</h3>
+  <select class="pm" data-t="m1" style="max-width:300px">${opt}</select><textarea id="m1" rows="8" data-tpl="${esc(aviso)}">${esc(aviso)}</textarea>
+  <p><button class="b p" data-a="copy:m1">Copiar</button></p></div>
+  <div class="card"><h3 style="margin-top:0">Apresentação da volante — D0 (${m.start?f2(add(m.start,0)):'—'}) · só vermelhos</h3>
+  <select class="pm" data-t="m2" style="max-width:300px">${opt}</select><textarea id="m2" rows="7" data-tpl="${esc(vol)}">${esc(vol)}</textarea>
+  <p><button class="b p" data-a="copy:m2">Copiar</button></p></div>`;
+}
+function vCheck(){const s=S();return `<h2>Checklists</h2><p class="sub">Cada lista fecha em um momento da linha do tempo.</p>`+Object.keys(CHECKS).map(k=>{const n=CHECKS[k].filter((_,i)=>s.check[k+i]).length,t=CHECKS[k].length;
+ return `<div class="card"><h3 style="margin-top:0">${CHECK_T[k]} <span class="tag">${n}/${t}</span></h3><div class="bar2"><i style="width:${n/t*100}%"></i></div>
+ ${CHECKS[k].map((c,i)=>`<div class="step" style="padding:6px 0"><input type="checkbox" data-p="check.${k}${i}" data-r="1" ${s.check[k+i]?'checked':''}><span>${esc(c)}</span></div>`).join('')}</div>`}).join('')}
+function vDiario(){
+  const s=S();const list=s.diario.map((d,i)=>({d,i})).filter(x=>!onlyAct||x.d.acao==='Sim');
+  return `<h2>Diário da volante</h2>
+  <p class="sub">Uma linha por acontecimento, preenchida no mesmo dia. Não é relatório, é registro. Linha mais recente em cima. Sempre entra: caso sensível/detrator (com print), entrega feita ou não no prazo, promessa da volante, verde que virou amarelo/vermelho, mudança de fase. Não entra: "bom dia", dúvida simples respondida na hora.</p>
+  <p class="noprint"><button class="b p" data-a="add:diario">+ Novo registro</button> <label style="display:inline;margin-left:12px"><input type="checkbox" id="onlyAct" ${onlyAct?'checked':''}> Só "precisa de ação" (visão da call de devolução)</label></p>
+  ${list.map(({d,i})=>`<div class="card"><div class="grid" style="grid-template-columns:140px 1fr 160px 90px">
+   <div><label>Data</label>${inp(`diario.${i}.data`,'','date')}</div>
+   <div><label>Mentorado</label><input list="nomes" data-p="diario.${i}.nome" value="${esc(d.nome)}"></div>
+   <div><label>Ação no retorno</label>${sel(`diario.${i}.acao`,['Não','Sim'],true)}</div>
+   <div style="text-align:right"><label>&nbsp;</label><button class="b d" data-a="del:diario:${i}">✕</button></div></div>
+   <div class="grid" style="margin-top:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+   <div><label>O que aconteceu</label>${ta(`diario.${i}.aconteceu`,'',3)}</div>
+   <div><label>O que a volante fez</label>${ta(`diario.${i}.fez`,'',3)}</div>
+   <div><label>Detalhe para o navegador</label>${ta(`diario.${i}.det`,'',3)}</div></div>
+   ${d.acao==='Sim'?'<span class="tag" style="margin-top:8px;display:inline-block;border-color:var(--r);color:var(--r)">precisa de ação no retorno</span>':''}</div>`).join('')||'<div class="card muted">Nenhum registro.</div>'}`;
+}
+const V={home:vHome,mapa:vMapa,fichas:vFichas,crit:vCrit,detr:vDetr,agenda:vAgenda,msg:vMsg,check:vCheck,diario:vDiario};
+function render(){renderTop();$('#main').innerHTML=V[tab]();}
+
+/* ---------- events ---------- */
+document.addEventListener('input',e=>{const t=e.target,p=t.dataset.p;if(!p)return;set(p,t.type==='checkbox'?t.checked:t.value)});
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.id==='pick'){DB.cur=t.value;save();render();return}
+  if(t.id==='onlyAct'){onlyAct=t.checked;render();return}
+  if(t.classList.contains('pm')){const ta=document.getElementById(t.dataset.t);ta.value=ta.dataset.tpl.replace('[nome]',t.value||'[nome]');return}
+  if(t.dataset.r){render()}
+});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const[a,x,y]=b.dataset.a.split(':');
+  if(a==='tab'){tab=x;render();window.scrollTo(0,0)}
+  else if(a==='add'){const r=ROW[x]();if(x==='diario')S()[x].unshift(r);else S()[x].push(r);save();render()}
+  else if(a==='del'){if(confirm('Remover esta linha?')){S()[x].splice(+y,1);save();render()}}
+  else if(a==='new'){const n=blank();DB.items[n.id]=n;DB.cur=n.id;tab='home';save();render()}
+  else if(a==='delpass'){if(confirm('Excluir esta passagem inteira? Não dá para desfazer.')){delete DB.items[DB.cur];const k=Object.keys(DB.items);if(!k.length){const n=blank();DB.items[n.id]=n;DB.cur=n.id}else DB.cur=k[0];save();render()}}
+  else if(a==='copy'){const t=document.getElementById(x);navigator.clipboard.writeText(t.value).then(()=>{b.textContent='Copiado ✓';setTimeout(()=>b.textContent='Copiar',1500)})}
+  else if(a==='export'){const s=S();const bl=new Blob([JSON.stringify(s,null,2)],{type:'application/json'});const u=document.createElement('a');u.href=URL.createObjectURL(bl);u.download=fname(s)+'.json';u.click()}
+  else if(a==='import'){const f=document.createElement('input');f.type='file';f.accept='.json';f.onchange=()=>f.files[0].text().then(t=>{try{const o=JSON.parse(t);if(!o.meta||!o.mapa)throw 0;o.id=uid();DB.items[o.id]=o;DB.cur=o.id;save();render()}catch(_){alert('Arquivo inválido.')}});f.click()}
+});
+render();
+</script>
+</body>
+</html>
